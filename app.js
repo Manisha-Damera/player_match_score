@@ -35,11 +35,23 @@ convertDbObjectToResponseObject = (dbObject) => {
     fours: dbObject.fours,
     sixes: dbObject.sixes,
     playerName: dbObject.player_name,
+  };
+};
+
+convertMatchDetails = (dbObject) => {
+  return {
+    matchId: dbObject.match_id,
     match: dbObject.match,
     year: dbObject.year,
   };
 };
 
+convertPlayerDetailsObjectToResponseObject = (dbObject) => {
+  return {
+    playerId: dbObject.player_id,
+    playerName: dbObject.player_name,
+  };
+};
 //API 1
 app.get("/players/", async (request, response) => {
   const getPlayerDetails = `SELECT 
@@ -115,42 +127,42 @@ app.get("/players/:playerId/matches/", async (request, response) => {
   SELECT
    *
   FROM 
-  player_match_score.player_id 
+  player_match_score
   NATURAL JOIN 
-  player_details.player_id
+  match_details
   WHERE 
   player_id='${playerId}';`;
 
   const playerMatchScoreDetails = await db.all(getPlayerMDetails);
   response.send(
-    playerMatchScoreDetails.map((eachPlayer) =>
-      convertDbObjectToResponseObject(eachPlayer)
-    )
+    playerMatchScoreDetails.map((eachPlayer) => convertMatchDetails(eachPlayer))
   );
   //response.send(playerDetails);
 });
 
 //API 6
 
-app.get("/matches/:matchId/players/", async (request, response) => {
+app.get("/matches/:matchId/players", async (request, response) => {
   const { matchId } = request.params;
 
-  const getApiSixDetails = `SELECT  player_details.player_id AS playerId,
-	      player_details.player_name AS playerName
-   FROM player_details 
+  const getApiSixDetails = `SELECT  *
+   FROM player_match_score 
    NATURAl JOIN
-    player_match_score
+    player_details
     WHERE
-     match_id='${matchId}';`;
+     match_id=${matchId};`;
   const matchPlayerDetails = await db.all(getApiSixDetails);
-  //const playerArray = convertDbObjectToResponseObject(matchPlayerDetails);
+  const playerArray = convertDbObjectToResponseObject(matchPlayerDetails);
   response.send(
-    matchPlayerDetails.map(
-      (eachPlayer) => ({
+    matchPlayerDetails.map((eachPlayer) =>
+      // convertMatchDetails (eachPlayer);
+      ({
         playerId: eachPlayer.player_id,
         playerName: eachPlayer.player_name,
       })
+      //response.send(convertMatchDetails (matchPlayerDetails));
       //convertDbObjectToResponseObject(eachPlayer)
+      //response.send(playerArray);
     )
   );
 });
